@@ -1,6 +1,8 @@
 # volna-skillcheck
 
-### Did that new agent rule actually help?
+![Volna.Skillcheck — compare agent instruction revisions on recorded tasks with blind, swapped judgments and regression checks.](https://raw.githubusercontent.com/vladzima/volna-skillcheck/main/assets/volna-skillcheck-banner.png)
+
+### Answers the question: Did the new agent rule actually help?
 
 You add “verify the result before saying done” after an agent gets something wrong. It sounds sensible—but does it fix the failure? Does it make the agent needlessly hesitant on tasks it already handled well?
 
@@ -8,9 +10,33 @@ You add “verify the result before saying done” after an agent gets something
 
 Use it before changing a `SKILL.md`, `AGENTS.md`, `CLAUDE.md`, or an agent's system prompt.
 
-[Install the skill](#install-the-skill) · [Use the CLI](#quick-start) · [Choose an adapter](#choose-an-adapter) · [How judging works](https://github.com/vladzima/volna-skillcheck/blob/main/docs/methodology.md)
+The comparison workflow was built and battle-tested as part of [Volna](https://volna.computer), a production AI assistant. It helped us improve Volna's instructions by checking proposed rules against past failures and tasks the assistant already handled well. We extracted that workflow into **volna-skillcheck** and open-sourced it so other agent builders can use the same feedback loop.
+
+[See a real run](#a-real-failure-replayed) · [Install the skill](#install-the-skill) · [Use the CLI](#quick-start) · [Choose an adapter](#choose-an-adapter)
 
 Python 3.10+ · Linux and macOS · MIT · No Python runtime dependencies
+
+## A real failure, replayed
+
+One failure behind Volna's checks was testing a different command and treating the original problem as fixed. We replayed that situation with a real model through OpenCode, using two sanitized cases and a small instruction change:
+
+```diff
+ Answer briefly.
++Require evidence before claiming completion.
+```
+
+Both revisions received the same task and evidence. The judge compared their answers twice, with the order reversed:
+
+| Case | Before the rule | After the rule | Result |
+| --- | --- | --- | --- |
+| Was the original command fixed? | Reported the earlier failure, without a next check | Explicitly said the fix was unverified and the original command still needed testing | New rule preferred in both orders |
+| What is 7 + 5? | Answered 12 | Answered 12, without unnecessary verification | Tie |
+
+**Result: 1 win, 1 tie, no observed regressions, no errors. Verdict: `insufficient_data`.**
+
+The run showed a useful change in the answer, and a remaining weakness: the judge flagged “still needs fixing” as an assumption when the evidence established that testing was missing. That gave us a concrete refinement to review—ask to rerun the exact command—and kept one favorable example from becoming an automatic pass.
+
+This overview comes from a recorded live model run on two sanitized replay cases (OpenCode 2.2.5, `openai/gpt-6-astra#high`, November 1, 2026). It is not a production success-rate measurement; the underlying task report stays private.
 
 ## Install the skill
 
