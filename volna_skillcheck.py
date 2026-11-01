@@ -68,7 +68,13 @@ def process(command, payload, timeout, *, cwd=None, isolate=True):
                     child.kill()
             except ProcessLookupError:
                 pass
-            child.wait()
+            except PermissionError:
+                # macOS can reject killpg when the group contains an exited child.
+                if child.poll() is None:
+                    child.kill()
+                    raise AdapterError("adapter_cleanup_failed")
+            finally:
+                child.wait()
 
 
 def invoke(command, request, timeout):

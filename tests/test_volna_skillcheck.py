@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import volna_skillcheck as s
 
@@ -145,6 +145,19 @@ class EvaluationTests(unittest.TestCase):
 
 
 class ProcessAndCLITests(unittest.TestCase):
+    def test_cleanup_permission_race_preserves_error_and_reaps_child(self):
+        for exited in (True, False):
+            child = Mock(pid=123, returncode=0 if exited else None)
+            child.poll.return_value = child.returncode
+            with patch.object(s.subprocess, "Popen", return_value=child), \
+                    patch.object(s.os, "fstat", return_value=Mock(st_size=s.MAX_BYTES + 1)), \
+                    patch.object(s.os, "killpg", side_effect=PermissionError):
+                expected = "adapter_output_too_large" if exited else "adapter_cleanup_failed"
+                with self.assertRaisesRegex(s.AdapterError, expected):
+                    s.process(["unused"], "", 1)
+            child.wait.assert_called_once()
+            self.assertEqual(child.kill.call_count, 0 if exited else 1)
+
     def test_protocol_failures_and_output_bound(self):
         programs = [("print('[]')", "adapter_response_not_object"),
                     ("print('bad')", "adapter_invalid_json"),
