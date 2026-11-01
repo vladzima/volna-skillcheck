@@ -15,7 +15,7 @@ import sys
 import tempfile
 import time
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 EXIT_CODES = {"candidate_improvement": 0, "incomplete": 1, "regression": 2,
               "failed_checks": 2, "inconclusive": 3, "insufficient_data": 3}
 MAX_BYTES = 4 * 1024 * 1024
@@ -31,7 +31,7 @@ def decode_json(raw):
     return json.loads(raw, parse_constant=invalid_constant)
 
 
-def process(command, payload, timeout, *, cwd=None, isolate=True):
+def process(command, payload, timeout, *, cwd=None, isolate=True, env=None):
     """Bound output and terminate the process group on timeout or interruption."""
     with tempfile.TemporaryFile() as source, tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
         source.write(payload.encode("utf-8"))
@@ -39,7 +39,7 @@ def process(command, payload, timeout, *, cwd=None, isolate=True):
         try:
             child = subprocess.Popen(command, stdin=source, stdout=out, stderr=err,
                                      cwd=cwd, start_new_session=isolate,
-                                     env={**os.environ, "_VOLNA_SKILLCHECK_MANAGED": "1"})
+                                     env={**(os.environ if env is None else env), "_VOLNA_SKILLCHECK_MANAGED": "1"})
         except OSError as error:
             raise AdapterError("adapter_start_failed") from error
         deadline = time.monotonic() + timeout

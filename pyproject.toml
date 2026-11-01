@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "volna-skillcheck"
-version = "0.1.0"
+version = "0.2.0"
 description = "Blind comparison of agent instruction revisions on recorded cases"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -28,6 +28,12 @@ Issues = "https://github.com/vladzima/volna-skillcheck/issues"
 [project.scripts]
 volna-skillcheck = "volna_skillcheck:main"
 volna-skillcheck-codex = "volna_skillcheck_codex:main"
+volna-skillcheck-opencode = "volna_skillcheck_opencode:main"
+volna-skillcheck-claude = "volna_skillcheck_claude:main"
+volna-skillcheck-openai = "volna_skillcheck_openai:main"
 
 [tool.setuptools]
-py-modules = ["volna_skillcheck", "volna_skillcheck_codex"]
+py-modules = [
+  "volna_skillcheck", "volna_skillcheck_adapter", "volna_skillcheck_codex",
+  "volna_skillcheck_opencode", "volna_skillcheck_claude", "volna_skillcheck_openai",
+]

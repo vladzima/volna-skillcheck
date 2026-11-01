@@ -1,14 +1,20 @@
 # volna-skillcheck
 
-**Change an agent instruction. Replay recorded tasks. Inspect improvements and regressions.**
+### Did that new agent rule actually help?
 
-volna-skillcheck compares two instruction revisions using identical task inputs and recorded context. A blind judge sees the two answers in both orders. Reports retain the answers, judgments, checks, model metadata, and input hashes—including evidence from failed runs.
+You add “verify the result before saying done” after an agent gets something wrong. It sounds sensible—but does it fix the failure? Does it make the agent needlessly hesitant on tasks it already handled well?
 
-Python 3.10+, Linux or macOS. No Python runtime dependencies. MIT licensed.
+**volna-skillcheck compares the old and new instructions on the same recorded tasks.** It saves both answers, asks a blind judge to compare them in both orders, and flags regressions and uncertainty.
 
-## Try it offline
+Use it before changing a `SKILL.md`, `AGENTS.md`, `CLAUDE.md`, or an agent's system prompt.
 
-Clone the repository and install locally:
+[Quick start](#quick-start) · [Choose an adapter](#choose-an-adapter) · [Use it with your agent](docs/workflows.md) · [How judging works](docs/methodology.md)
+
+Python 3.10+ · Linux and macOS · MIT · No Python runtime dependencies
+
+## Quick start
+
+**1. Install from the repository.**
 
 ```sh
 git clone https://github.com/vladzima/volna-skillcheck.git
@@ -16,95 +22,98 @@ cd volna-skillcheck
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install .
-volna-skillcheck --old examples/old.md --new examples/new.md \
+```
+
+**2. Try the offline example.** No account or API key needed.
+
+```sh
+volna-skillcheck \
+  --old examples/old.md --new examples/new.md \
   --cases examples/cases.json \
   --adapter "python examples/mock_adapter.py" \
   --out reports/demo.json
 ```
 
-Expected: six candidate wins, two ties, `candidate_improvement`, exit 0. Reverse `--old` and `--new` with a **different output path** to see `regression`, exit 2. The fixture is deliberately hardcoded; this verifies the plumbing, not model quality. Each output path must be new.
+The fixture produces **6 wins, 2 ties, and no regressions**. Swap `--old` and `--new` and use a new output path to see a regression. This is a hardcoded demo of the tool, not evidence of model quality.
 
-Installation provides `volna-skillcheck` and `volna-skillcheck-codex`. The example files live in the checkout and source distribution, not the installed wheel. You can also run `python3 volna_skillcheck.py` without installing.
+## Choose an adapter
 
-## Evaluate with Codex
+Keep the same command and replace `--adapter`:
 
-Install and authenticate the official [Codex CLI](https://developers.openai.com/codex/cli/). The adapter is tested with **codex-cli 0.166.0**. Older versions may lack required isolation flags. Specify a model available to your account:
+| Run through | Adapter command | Setup / verification |
+| --- | --- | --- |
+| **OpenCode** | `volna-skillcheck-opencode --model PROVIDER/MODEL` | Existing login; requires V2 ≥2.2.3; live-tested on 2.2.5 |
+| **Codex** | `volna-skillcheck-codex --model MODEL` | Existing login; live-tested on 0.166.0 |
+| **OpenAI-compatible API** | `volna-skillcheck-openai --model MODEL` | `OPENAI_API_KEY`; configurable endpoint; tested with a local HTTP server |
+| **Claude Code** | `volna-skillcheck-claude --model MODEL` | Existing installation/login; fixture-tested, **not live-verified** |
 
-```sh
-volna-skillcheck --old examples/old.md --new examples/new.md \
-  --cases examples/cases.json \
-  --adapter "volna-skillcheck-codex --model YOUR_MODEL_ID" \
-  --out reports/codex.json
-```
-
-This uses your existing Codex login and consumes your provider quota. A trial costs two generations and, if the answers differ, two judge calls. Eight cases cost up to 32 calls; `--repeats 3` raises that to 96. Calls are sequential. There are no automatic retries or automatic instruction changes.
-
-The adapter uses fresh temporary directories, read-only sandboxing, ephemeral sessions, an explicit model and reasoning effort (`high` by default). It replaces Codex's built-in instruction prompt, ignores user config and rules, disables AGENTS.md loading, local skill discovery, integrations, hooks, shell, browser, and other optional tools. Unexpected tool activity fails the evaluation. It uses the CLI's `skip_host_skill_discovery` feature, currently marked experimental: revalidate isolation before upgrading Codex. Host-managed policies and Codex's remaining runtime behavior still apply. This is **not a raw-model API benchmark or a sandbox for hostile adapters**.
-
-Model name, reasoning effort, Codex version, prompt hashes, and token usage are saved per call. CLI transport diagnostics are deliberately not copied into reports. If the adapter fails, first check `codex --version` and `codex login status`; run the adapter directly with a synthetic request from [the protocol documentation](docs/protocol.md) to see its diagnostic code.
-
-To use a separate judge or repeat generations:
+For example, with an OpenCode model available in `opencode models`:
 
 ```sh
-volna-skillcheck --old examples/old.md --new examples/new.md \
+volna-skillcheck \
+  --old examples/old.md --new examples/new.md \
   --cases examples/cases.json \
-  --adapter "volna-skillcheck-codex --model YOUR_MODEL_ID" \
-  --judge-adapter "volna-skillcheck-codex --model YOUR_JUDGE_MODEL_ID" \
-  --repeats 3 --seed 42 --out reports/repeated.json
+  --adapter "volna-skillcheck-opencode --model openai/gpt-6-astra#high" \
+  --out reports/opencode.json
 ```
 
-`--seed` controls generation and presentation order, **not model sampling**. Models, aliases, and providers can change; identical inputs do not guarantee identical answers. Use a pinned model snapshot where supported. The bundled adapter uses a 90-second Codex timeout; the runner defaults to 120 seconds per adapter invocation. When increasing either, keep the runner's timeout above the adapter's, allowing startup time.
+The example model must be available to your account. See the [adapter setup guide](docs/adapters.md) for API endpoints, Claude requirements, separate judge models, timeouts, and isolation details.
 
-## Write cases
+## Try your own instruction change
 
-A suite is a nonempty JSON array with unique string IDs:
+You need three things:
+
+1. **The old and new instructions** as two text files.
+2. **A few representative tasks**, with the evidence the agent had at the time.
+3. **A criterion** describing what a good answer should do.
+
+A case looks like this:
 
 ```json
 [
   {
     "id": "export-status",
     "input": "Is the export ready?",
-    "context": "The job started; no output has been checked.",
-    "criteria": "Distinguish starting from completing. Identify the missing check.",
-    "checks": {"not_contains": ["Export complete."]}
+    "context": "The job started, but nobody has checked the output file.",
+    "criteria": "Distinguish starting from completing. Say what still needs checking."
   }
 ]
 ```
 
-`id`, `input`, and `criteria` are required. `context` is an optional string of recorded tool results or other task evidence. `checks` supports `contains` and `not_contains`, lists of **case-sensitive literal substrings**. These checks test the answer text; they do not prove a tool action happened. Neither criteria nor checks are given to the generation adapter. Unknown case fields are rejected to catch misspelled configuration.
+Save it as `cases.json` and pass it to `--cases`. Add cases where the old instruction already worked, too. A single case can expose a regression; it cannot meet the default five-win improvement threshold.
 
-The eight included scenarios are synthetic: acknowledgment without completion, verification of the wrong command, startup mistaken for success, ambiguous publication after interruption, evidence lost in a summary, telemetry mistaken for delivery, plus two successful baseline controls. Use a held-out suite representative of your own tasks; don't tune instructions against your entire evaluation set.
+**Want a ready-to-copy workflow?** The [agent integration guide](docs/workflows.md) walks through testing an `AGENTS.md` edit, a skill revision, an OpenCode `/skillcheck` command, and a manual CI evaluation with a provider key.
 
-## Interpret a run
+## Read the result
 
-| Verdict | Exit | Meaning |
+The CLI prints a summary. Open the JSON file passed to `--out` for the actual answers, judge explanations, and any failed calls.
+
+| Result | What to do | Exit |
 | --- | --- | --- |
-| `candidate_improvement` | 0 | At least five distinct winning cases by default, no observed losses, uncertainty, failed candidate checks, or errors |
-| `incomplete` | 1 | A call failed, an evaluation is unfinished, or a checkpoint is from a running process |
-| `regression` | 2 | At least one agreed baseline win, or a candidate check failure where the baseline passed |
-| `failed_checks` | 2 | Candidate checks failed, including cases where both revisions failed |
-| `inconclusive` | 3 | All ties, judge abstention, swapped disagreement, or inconsistent repeated results |
-| `insufficient_data` | 3 | Some candidate wins, fewer than `--min-wins` distinct cases |
+| `candidate_improvement` | Review the winning answers before adopting the change | 0 |
+| `regression` / `failed_checks` | Inspect what got worse or failed a required check | 2 |
+| `inconclusive` / `insufficient_data` | Inspect disagreement or add representative cases | 3 |
+| `incomplete` | Fix the adapter/input problem and rerun to a new report path | 1 |
 
-Invalid inputs and report I/O failures exit 1; CLI usage errors exit 2; Ctrl+C exits 130 and attempts to save partial evidence. Any nonzero exit should fail a promotion gate. A failed run takes precedence over other verdicts; regression counts and failed checks remain visible in its report. Read them, not just the final verdict.
+By default, a candidate needs **five distinct winning cases**, no observed losses, no uncertainty, and no failed checks. Five wins is a review threshold, not statistical significance. Repeated trials don't count as additional independent cases.
 
-The default `--min-wins 5` is an explicit **review threshold, not a statistical significance claim**. Repeats never count as extra independent cases. Lowering the threshold is useful for a smoke test, but weakens the evidence required for exit 0. See [evaluation methodology and limitations](docs/methodology.md).
+Use `--repeats 3` to look for inconsistent behavior, or `--judge-adapter` to use a different model for judging. Each trial costs up to **four model calls per case**. Calls are sequential; there are no automatic retries or instruction updates.
 
-## Reports and privacy
+> **What this measures:** answers produced from recorded context. It does not replay tools, run an agent's full workflow, or prove that an action happened. A favorable model judgment is a reason to review a change—not a reliability guarantee.
 
-Reports use schema version 2 and contain the exact instructions, case inputs/context, answers, reasons, checks, and optional adapter metadata. This makes a run inspectable; it also makes a report sensitive. Reports are created with owner-only permissions and checkpointed atomically after successful calls. Existing files are never overwritten by a new run. Ctrl+C preserves completed evidence; a hard kill leaves the last checkpoint marked `running`. There is no resume mode; use a new report path for another run.
+## Keep your data private
 
-Only use synthetic or sanitized data in public suites. Instructions and case data go to the configured adapter/provider. Adapter commands run with your account permissions and inherit your environment; trust the executable. volna-skillcheck invokes commands directly without a shell. Keep credentials in environment variables or your provider's credential store, never in command arguments or metadata. Commands are recorded as hashes, not plaintext. volna-skillcheck does not redact secrets echoed by models. It has no built-in telemetry.
+Use synthetic or sanitized cases. Instructions and case data go to your selected adapter/provider. Reports contain the exact inputs, answers, and reasons. They are created with owner-only permissions; this repository ignores `reports/`. Each run needs a fresh output path, and partial evidence is saved as the run progresses.
 
-## Development
+Adapters are trusted local executables, not a sandbox for hostile code. Provider and CLI logging policies still apply; OpenCode may retain evaluation sessions in its local store. [Security details](SECURITY.md).
 
-```sh
-python3 -m unittest discover -s tests -v
-python -m pip install build twine
-python -m build
-python -m twine check dist/*
-```
+## More detail
 
-Tests cover the evaluation policy, malformed responses, timeouts and descendant cleanup, interrupted evidence, secure atomic reporting, forward/reverse/tie CLI runs, and a fake Codex executable. CI tests Linux and macOS and installs the built wheel outside the source tree. Real provider tests require credentials and are manual; CI does not spend provider quota.
+- [Adapter setup](docs/adapters.md) — OpenCode, Codex, Claude Code, and compatible APIs
+- [Agent workflows](docs/workflows.md) — examples you can put into an existing project
+- [Cases and reports](docs/usage.md) — literal checks, exit codes, errors, and reproducibility
+- [Methodology](docs/methodology.md) — judgment policy and limitations
+- [Adapter protocol](docs/protocol.md) — connect another runtime
+- [Contributing](CONTRIBUTING.md) — development and tests
 
-See [contributing](CONTRIBUTING.md), [adapter protocol](docs/protocol.md), [security](SECURITY.md), and [release checklist](docs/releasing.md).
+Run the offline suite with `python3 -m unittest discover -s tests -v`. Python package artifacts are available from [GitHub Releases](https://github.com/vladzima/volna-skillcheck/releases); the project is not published on PyPI.

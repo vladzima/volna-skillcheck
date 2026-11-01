@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-11-01
+
+- Add OpenCode V2, Claude Code, and OpenAI-compatible Chat Completions adapters.
+- Share the generation/judge prompts and response validation across bundled adapters.
+- Validate API responses, refuse credential-bearing redirects, and support local endpoints.
+- Rewrite the README around a quick start and provider choice; add agent workflows, an OpenCode command template, and a manual CI example.
+- OpenCode is live-tested; Claude Code is fixture-tested and hosted API compatibility remains unverified.
+
 ## 0.1.0 — 2026-11-01
 
 - Installable Python CLI and authenticated Codex CLI adapter; no Python runtime dependencies.

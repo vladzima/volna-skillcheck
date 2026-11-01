@@ -35,7 +35,9 @@ jobs:
           "$RUNNER_TEMP/volna-skillcheck-install/bin/python" -m pip install dist/*.whl
           cd "$RUNNER_TEMP"
           "$RUNNER_TEMP/volna-skillcheck-install/bin/volna-skillcheck" --version
-          "$RUNNER_TEMP/volna-skillcheck-install/bin/volna-skillcheck-codex" --help
+          for adapter in codex opencode claude openai; do
+            "$RUNNER_TEMP/volna-skillcheck-install/bin/volna-skillcheck-$adapter" --help
+          done
           "$RUNNER_TEMP/volna-skillcheck-install/bin/volna-skillcheck" \
             --old "$GITHUB_WORKSPACE/examples/old.md" \
             --new "$GITHUB_WORKSPACE/examples/new.md" \
