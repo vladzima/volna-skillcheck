@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 — 2026-11-01
+
+- Add the portable `volna-skillcheck` agent skill with five-case defaults, existing-provider selection, bounded evaluation, and evidence review.
+- Document installation through `npx skills` for OpenCode, Codex, Claude Code, and other compatible harnesses, plus manual installation.
+- Add PyPI Trusted Publishing from tagged GitHub releases, with separate build and publish jobs and no stored publishing token.
+- Put PyPI and skill installation first in the README; use absolute documentation links for the PyPI project page.
+
 ## 0.2.0 — 2026-11-01
 
 - Add OpenCode V2, Claude Code, and OpenAI-compatible Chat Completions adapters.

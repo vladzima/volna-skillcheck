@@ -15,7 +15,7 @@ import sys
 import tempfile
 import time
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 EXIT_CODES = {"candidate_improvement": 0, "incomplete": 1, "regression": 2,
               "failed_checks": 2, "inconclusive": 3, "insufficient_data": 3}
 MAX_BYTES = 4 * 1024 * 1024

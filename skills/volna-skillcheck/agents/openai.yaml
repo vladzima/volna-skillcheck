@@ -1,0 +1,4 @@
+interface:
+  display_name: "volna-skillcheck"
+  short_description: "Check skill changes for improvements and regressions"
+  default_prompt: "Use $volna-skillcheck to compare this skill change with its previous version and explain the saved evidence."

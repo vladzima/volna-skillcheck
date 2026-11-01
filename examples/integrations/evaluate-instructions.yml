@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install pinned release
-        run: python -m pip install 'https://github.com/vladzima/volna-skillcheck/releases/download/v0.2.0/volna_skillcheck-0.2.0-py3-none-any.whl'
+        run: python -m pip install 'volna-skillcheck==0.3.0'
       - name: Compare revisions
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

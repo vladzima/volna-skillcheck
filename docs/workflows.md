@@ -1,5 +1,7 @@
 # Use it with your agent
 
+For the shortest path, [install the volna-skillcheck skill](skill.md) and ask your agent to check the change. It prepares the inputs and runs a bounded comparison. The workflows below show the manual steps and optional integrations.
+
 Start with a real instruction change and a few **sanitized decision points**. You do not need to export an entire chat, wire up an agent SDK, or replace your existing assistant.
 
 The adapter chooses which runtime/model answers and judges. The instruction file chooses what you are testing. You can test `CLAUDE.md` with the API adapter, or a Hermes skill through OpenCode—just don't interpret that as a test of the original runtime's skill discovery or tool execution.

@@ -8,25 +8,51 @@ You add “verify the result before saying done” after an agent gets something
 
 Use it before changing a `SKILL.md`, `AGENTS.md`, `CLAUDE.md`, or an agent's system prompt.
 
-[Quick start](#quick-start) · [Choose an adapter](#choose-an-adapter) · [Use it with your agent](docs/workflows.md) · [How judging works](docs/methodology.md)
+[Install the skill](#install-the-skill) · [Use the CLI](#quick-start) · [Choose an adapter](#choose-an-adapter) · [How judging works](https://github.com/vladzima/volna-skillcheck/blob/main/docs/methodology.md)
 
 Python 3.10+ · Linux and macOS · MIT · No Python runtime dependencies
 
+## Install the skill
+
+The easiest way to start is to let your agent prepare and run the comparison. Install the CLI, then add the skill to your harness:
+
+```sh
+uv tool install volna-skillcheck
+npx skills add vladzima/volna-skillcheck --skill volna-skillcheck
+```
+
+The installer lets you choose OpenCode, Codex, Claude Code, or another supported harness. It installs into the current project by default; add `-g` for all projects. Node.js is needed for this installer; a [manual copy works too](https://github.com/vladzima/volna-skillcheck/blob/main/docs/skill.md).
+
+Then ask your agent:
+
+> Use volna-skillcheck to check my SKILL.md edit against its previous version. Use my current provider and model, and show me any regressions.
+
+The skill snapshots the two versions, prepares five representative cases, runs one trial per case, and explains the saved evidence. It reuses your existing provider where possible and asks if the model is unknown. A default run takes up to 20 adapter calls; it does not automatically change the tested skill or retry paid calls.
+
+**OpenCode shortcut:** `npx skills add vladzima/volna-skillcheck --skill volna-skillcheck -a opencode -g`. Then mention `@volna-skillcheck` in OpenCode V2. [Installation, defaults, and invocation examples →](https://github.com/vladzima/volna-skillcheck/blob/main/docs/skill.md)
+
 ## Quick start
 
-**1. Install from the repository.**
+Prefer running the CLI yourself? Install from [PyPI](https://pypi.org/project/volna-skillcheck/):
+
+```sh
+uv tool install volna-skillcheck
+# Or: pipx install volna-skillcheck
+```
+
+With plain Python, use a virtual environment:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install volna-skillcheck
+```
+
+**Try the offline example.** No account or API key needed. Clone the repository to get the example files:
 
 ```sh
 git clone https://github.com/vladzima/volna-skillcheck.git
 cd volna-skillcheck
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install .
-```
-
-**2. Try the offline example.** No account or API key needed.
-
-```sh
 volna-skillcheck \
   --old examples/old.md --new examples/new.md \
   --cases examples/cases.json \
@@ -57,7 +83,7 @@ volna-skillcheck \
   --out reports/opencode.json
 ```
 
-The example model must be available to your account. See the [adapter setup guide](docs/adapters.md) for API endpoints, Claude requirements, separate judge models, timeouts, and isolation details.
+The example model must be available to your account. See the [adapter setup guide](https://github.com/vladzima/volna-skillcheck/blob/main/docs/adapters.md) for API endpoints, Claude requirements, separate judge models, timeouts, and isolation details.
 
 ## Try your own instruction change
 
@@ -82,7 +108,7 @@ A case looks like this:
 
 Save it as `cases.json` and pass it to `--cases`. Add cases where the old instruction already worked, too. A single case can expose a regression; it cannot meet the default five-win improvement threshold.
 
-**Want a ready-to-copy workflow?** The [agent integration guide](docs/workflows.md) walks through testing an `AGENTS.md` edit, a skill revision, an OpenCode `/skillcheck` command, and a manual CI evaluation with a provider key.
+**Want a ready-to-copy workflow?** The [agent integration guide](https://github.com/vladzima/volna-skillcheck/blob/main/docs/workflows.md) walks through testing an `AGENTS.md` edit, a skill revision, an OpenCode `/skillcheck` command, and a manual CI evaluation with a provider key.
 
 ## Read the result
 
@@ -105,15 +131,16 @@ Use `--repeats 3` to look for inconsistent behavior, or `--judge-adapter` to use
 
 Use synthetic or sanitized cases. Instructions and case data go to your selected adapter/provider. Reports contain the exact inputs, answers, and reasons. They are created with owner-only permissions; this repository ignores `reports/`. Each run needs a fresh output path, and partial evidence is saved as the run progresses.
 
-Adapters are trusted local executables, not a sandbox for hostile code. Provider and CLI logging policies still apply; OpenCode may retain evaluation sessions in its local store. [Security details](SECURITY.md).
+Adapters are trusted local executables, not a sandbox for hostile code. Provider and CLI logging policies still apply; OpenCode may retain evaluation sessions in its local store. [Security details](https://github.com/vladzima/volna-skillcheck/blob/main/SECURITY.md).
 
 ## More detail
 
-- [Adapter setup](docs/adapters.md) — OpenCode, Codex, Claude Code, and compatible APIs
-- [Agent workflows](docs/workflows.md) — examples you can put into an existing project
-- [Cases and reports](docs/usage.md) — literal checks, exit codes, errors, and reproducibility
-- [Methodology](docs/methodology.md) — judgment policy and limitations
-- [Adapter protocol](docs/protocol.md) — connect another runtime
-- [Contributing](CONTRIBUTING.md) — development and tests
+- [Installable skill](https://github.com/vladzima/volna-skillcheck/blob/main/docs/skill.md) — install once, ask your agent to check changes
+- [Adapter setup](https://github.com/vladzima/volna-skillcheck/blob/main/docs/adapters.md) — OpenCode, Codex, Claude Code, and compatible APIs
+- [Agent workflows](https://github.com/vladzima/volna-skillcheck/blob/main/docs/workflows.md) — examples you can put into an existing project
+- [Cases and reports](https://github.com/vladzima/volna-skillcheck/blob/main/docs/usage.md) — literal checks, exit codes, errors, and reproducibility
+- [Methodology](https://github.com/vladzima/volna-skillcheck/blob/main/docs/methodology.md) — judgment policy and limitations
+- [Adapter protocol](https://github.com/vladzima/volna-skillcheck/blob/main/docs/protocol.md) — connect another runtime
+- [Contributing](https://github.com/vladzima/volna-skillcheck/blob/main/CONTRIBUTING.md) — development and tests
 
-Run the offline suite with `python3 -m unittest discover -s tests -v`. Python package artifacts are available from [GitHub Releases](https://github.com/vladzima/volna-skillcheck/releases); the project is not published on PyPI.
+Run the offline suite with `python3 -m unittest discover -s tests -v`. Python package artifacts are available from [PyPI](https://pypi.org/project/volna-skillcheck/) and [GitHub Releases](https://github.com/vladzima/volna-skillcheck/releases).
