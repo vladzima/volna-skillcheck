@@ -4,14 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "volna-skillcheck"
-version = "0.3.0"
+version = "0.3.1"
 description = "Blind comparison of agent instruction revisions on recorded cases"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "volna-skillcheck contributors"}]
-keywords = ["agents", "evaluation", "skills", "regression-testing"]
+keywords = [
+  "agents", "evaluation", "skills", "regression-testing",
+  "ai-agents", "agent-skills", "llm-evaluation", "prompt-testing",
+  "codex", "claude-code", "opencode", "openai-compatible", "python", "volna",
+]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3",

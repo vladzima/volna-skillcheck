@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — 2026-11-01
+
+- Expand PyPI discovery keywords to match the project's GitHub topics and supported integrations.
+- Include the updated README, Volna origin story, recorded evaluation overview, and supplied banner in the package release.
+- No evaluation or adapter behavior changes.
+
 ## 0.3.0 — 2026-11-01
 
 - Add the portable `volna-skillcheck` agent skill with five-case defaults, existing-provider selection, bounded evaluation, and evidence review.
