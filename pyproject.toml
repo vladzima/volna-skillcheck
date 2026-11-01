@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "volna-skillcheck"
+version = "0.1.0"
+description = "Blind comparison of agent instruction revisions on recorded cases"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "volna-skillcheck contributors"}]
+keywords = ["agents", "evaluation", "skills", "regression-testing"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX",
+  "Topic :: Software Development :: Testing",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/vladzima/volna-skillcheck"
+Repository = "https://github.com/vladzima/volna-skillcheck"
+Issues = "https://github.com/vladzima/volna-skillcheck/issues"
+
+[project.scripts]
+volna-skillcheck = "volna_skillcheck:main"
+volna-skillcheck-codex = "volna_skillcheck_codex:main"
+
+[tool.setuptools]
+py-modules = ["volna_skillcheck", "volna_skillcheck_codex"]
